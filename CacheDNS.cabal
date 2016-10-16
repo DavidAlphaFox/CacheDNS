@@ -16,8 +16,8 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Lib
-                       Network.DNS.Types
-  other-modules:       Network.DNS.Internal
+                       CacheDNS.DNS.Types
+  other-modules:       CacheDNS.DNS.Internal
   build-depends:       base >= 4.7 && < 5
                      , bytestring
                      , iproute >= 1.7.1

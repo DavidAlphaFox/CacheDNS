@@ -1,7 +1,7 @@
 module Main where
 
-import Lib
-import CacheDNS.DNS.Types
+import Network.DNS
 
 main :: IO ()
-main = someFunc
+main = do
+    return ()

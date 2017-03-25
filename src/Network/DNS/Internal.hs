@@ -1,19 +1,25 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 
-module CacheDNS.DNS.Internal where
+module Network.DNS.Internal where
 
 import Control.Exception (Exception)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString.Builder as L
+import qualified Data.ByteString.Lazy as L
 import Data.IP (IP, IPv4, IPv6)
 import Data.Maybe (fromMaybe)
 import Data.Typeable (Typeable)
+import Data.Word (Word8)
 -- 包含了所有的DNS协议相关的定义
 ----------------------------------------------------------------
 
 -- | Type for domain.
 -- Domian是ByteString的别名
 type Domain = ByteString
+
+-- | Return type of composeQuery from Encode, needed in Resolver
+type Query = L.ByteString
 
 ----------------------------------------------------------------
 
@@ -30,8 +36,21 @@ data TYPE = A
           | SRV
           | DNAME
           | OPT
+          | DS
+          | RRSIG
+          | NSEC
+          | DNSKEY
+          | NSEC3
+          | NSEC3PARAM
+          | TLSA
+          | CDS
+          | CDNSKEY
+          | CSYNC
           | UNKNOWN Int deriving (Eq, Show, Read)
+
 -- DNS类型对应的数字整形
+-- https://www.iana.org/assignments/dns-parameters/dns-parameters.xhtml#dns-parameters-4
+--
 rrDB :: [(TYPE, Int)]
 rrDB = [
     (A,      1)
@@ -43,8 +62,18 @@ rrDB = [
   , (TXT,   16)
   , (AAAA,  28)
   , (SRV,   33)
-  , (DNAME, 39) -- RFC 2672
+  , (DNAME, 39) -- RFC 6672
   , (OPT,   41) -- RFC 6891
+  , (DS,    43) -- RFC 4034
+  , (RRSIG, 46) -- RFC 4034
+  , (NSEC,  47) -- RFC 4034
+  , (DNSKEY, 48) -- RFC 4034
+  , (NSEC3, 40) -- RFC 5155
+  , (NSEC3PARAM, 51) -- RFC 5155
+  , (TLSA,  52) -- RFC 6698
+  , (CDS,   59) -- RFC 7344
+  , (CDNSKEY, 60) -- RFC 7344
+  , (CSYNC, 62) -- RFC 7477
   ]
 
 data OPTTYPE = ClientSubnet
@@ -64,14 +93,12 @@ rookup  key ((x,y):xys)
 
 intToType :: Int -> TYPE
 intToType n = fromMaybe (UNKNOWN n) $ rookup n rrDB
-
 typeToInt :: TYPE -> Int
 typeToInt (UNKNOWN x)  = x
 typeToInt t = fromMaybe (error "typeToInt") $ lookup t rrDB
 
 intToOptType :: Int -> OPTTYPE
 intToOptType n = fromMaybe (OUNKNOWN n) $ rookup n orDB
-
 optTypeToInt :: OPTTYPE -> Int
 optTypeToInt (OUNKNOWN x)  = x
 optTypeToInt t = fromMaybe (error "optTypeToInt") $ lookup t orDB
@@ -95,9 +122,8 @@ data DNSError =
     -- | The name server was unable to process this query due to a
     --   problem with the name server.
   | ServerFailure
-    -- | Meaningful only for responses from an authoritative name
-    -- server, this code signifies that the
-    -- domain name referenced in the query does not exist.
+    -- | This code signifies that the domain name referenced in the
+    --   query does not exist.
   | NameError
     -- | The name server does not support the requested kind of query.
   | NotImplemented
@@ -141,15 +167,28 @@ data DNSFlags = DNSFlags {
   , recDesired   :: Bool
   , recAvailable :: Bool
   , rcode        :: RCODE
+  , authenData   :: Bool
   } deriving (Eq, Show)
 
 ----------------------------------------------------------------
 
 data QorR = QR_Query | QR_Response deriving (Eq, Show)
 
-data OPCODE = OP_STD | OP_INV | OP_SSR deriving (Eq, Show, Enum)
+data OPCODE
+  = OP_STD
+  | OP_INV
+  | OP_SSR
+  deriving (Eq, Show, Enum, Bounded)
 
-data RCODE = NoErr | FormatErr | ServFail | NameErr | NotImpl | Refused | BadOpt deriving (Eq, Show, Enum)
+data RCODE
+  = NoErr
+  | FormatErr
+  | ServFail
+  | NameErr
+  | NotImpl
+  | Refused
+  | BadOpt
+  deriving (Eq, Ord, Show, Enum, Bounded)
 
 ----------------------------------------------------------------
 
@@ -193,11 +232,12 @@ data RData = RD_NS Domain
            | RD_SRV Int Int Int Domain
            | RD_OPT [OData]
            | RD_OTH ByteString
-    deriving (Eq)
+           | RD_TLSA Word8 Word8 Word8 ByteString
+    deriving (Eq, Ord)
 
 instance Show RData where
   show (RD_NS dom) = BS.unpack dom
-  show (RD_MX prf dom) = BS.unpack dom ++ " " ++ show prf
+  show (RD_MX prf dom) = show prf ++ " " ++ BS.unpack dom
   show (RD_CNAME dom) = BS.unpack dom
   show (RD_DNAME dom) = BS.unpack dom
   show (RD_A a) = show a
@@ -208,11 +248,12 @@ instance Show RData where
   show (RD_SRV pri wei prt dom) = show pri ++ " " ++ show wei ++ " " ++ show prt ++ BS.unpack dom
   show (RD_OPT od) = show od
   show (RD_OTH is) = show is
+  show (RD_TLSA use sel mtype dgst) = show use ++ " " ++ show sel ++ " " ++ show mtype ++ " " ++ (BS.unpack $ L.toStrict . L.toLazyByteString . L.byteStringHex $ dgst)
 
 
 data OData = OD_ClientSubnet Int Int IP
            | OD_Unknown Int ByteString
-    deriving (Eq,Show)
+    deriving (Eq,Show,Ord)
 
 ----------------------------------------------------------------
 
@@ -228,6 +269,7 @@ defaultQuery = DNSMessage {
          , recDesired   = True
          , recAvailable = False
          , rcode        = NoErr
+         , authenData   = False
          }
      }
   , question   = []
@@ -247,10 +289,11 @@ defaultResponse =
               qOrR = QR_Response
             , authAnswer = True
             , recAvailable = True
+            , authenData = False
             }
         }
       }
--- 回答IPv4的域名查询的响应
+-- 回答域名查询的响应
 responseA :: Int -> Question -> [IPv4] -> DNSMessage
 responseA ident q ips =
   let hd = header defaultResponse
@@ -261,7 +304,7 @@ responseA ident q ips =
         , question = [q]
         , answer = an
       }
--- 回答IPv6的域名查询的响应
+
 responseAAAA :: Int -> Question -> [IPv6] -> DNSMessage
 responseAAAA ident q ips =
   let hd = header defaultResponse

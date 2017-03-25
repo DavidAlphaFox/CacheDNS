@@ -1,7 +1,7 @@
 -- | Data types for DNS Query and Response.
 --   For more information, see <http://www.ietf.org/rfc/rfc1035>.
 
-module CacheDNS.DNS.Types (
+module Network.DNS.Types (
   -- * Domain
     Domain
   -- * Resource Records
@@ -27,4 +27,4 @@ module CacheDNS.DNS.Types (
   , responseA, responseAAAA
   ) where
 
-import CacheDNS.DNS.Internal
+import Network.DNS.Internal

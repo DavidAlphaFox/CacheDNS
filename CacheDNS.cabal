@@ -24,6 +24,7 @@ library
                        CacheDNS.DNS.Decode
                        CacheDNS.Cache.LRU
                        CacheDNS.Cache.AtomicLRU
+                       CacheDNS.IPC.Mailbox
         
   Other-Modules:       CacheDNS.DNS.Internal 
                        CacheDNS.DNS.StateBinary
@@ -41,6 +42,7 @@ library
                       , contravariant >= 0.5 && < 2
                       , iproute >= 1.3.2
                       , mtl
+                      , stm == 2.4.4.1
                       , network >= 2.3
                       , random
                       , resourcet
@@ -61,6 +63,7 @@ executable CacheDNS
                      , stm == 2.4.4.1
                      , mtl
                      , transformers == 0.4.2.0
+                     , containers >= 0.2 && < 0.6
                      , configurator >= 0.3.0.0
                      , CacheDNS
   default-language:    Haskell2010

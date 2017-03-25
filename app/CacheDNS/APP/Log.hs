@@ -1,4 +1,4 @@
-module Log where
+module CacheDNS.APP.Log where
 
 import System.Log.Logger
 import System.Log.Handler hiding (setLevel)

@@ -26,19 +26,19 @@ import qualified Data.Configurator.Types as C
 
 -- from My Library
 import CacheDNS.DNS as DNS
-import CacheDNS.DNS.Decode as DNS
-import CacheDNS.DNS.Types as DNS
-
-import CacheDNS.Cache.LRU as Cache
+import CacheDNS.Cache.AtomicLRU (AtomicLRU)
+import CacheDNS.Cache.AtomicLRU as Cache
 
 -- from Main APP
-import qualified Log
+import CacheDNS.APP.Log as Log
+import CacheDNS.APP.Resolver as Resolver
 
 
 data ServerConfig = ServerConfig { server_host :: Maybe String
                                  , server_port :: Maybe String
                                  }
-data ServerShared = ServerShared { cache :: TVar (Cache.LRU (String,String) (Integer,DNS.DNSMessage))
+data ServerShared = ServerShared { cache :: (AtomicLRU (String,String) (Integer,DNS.DNSMessage))
+                                 , resolver :: ResolverQueue
                                  }
 nameM = "CacheDNS"                                
 
@@ -54,9 +54,11 @@ main = do
     let serverConfig = ServerConfig { server_host = server_host
                                     , server_port = server_port
                                     }
-    cache <- atomically $ newTVar (newLRU cache_size)
-    let serverShared = ServerShared { cache = cache 
-
+    cache <- newAtomicLRU cache_size
+    resolver <- Resolver.newResolver
+    forkIO $ forever $ Resolver.loopQuery resolver
+    let serverShared = ServerShared { cache = cache
+                                    , resolver = resolver 
                                     }
     udp serverConfig serverShared
 
@@ -78,7 +80,6 @@ udp c s = do
             infoM nameF $ "bound to " ++ (show $ addrAddress addr)
             forever $ do
                 (a, sa) <- recvFrom sock maxLength
-                let d = DNS.decode (BSL.fromStrict a)
-                infoM nameF $ (show d)
+                Resolver.addQuery (a, sa) (resolver s)
                 return ()
         )

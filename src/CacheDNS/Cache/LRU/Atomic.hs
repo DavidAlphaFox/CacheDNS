@@ -10,8 +10,8 @@
 -- possible to put an 'AtomicLRU' into a bad state with this module.
 -- It is highly recommended that the external interface,
 -- "Data.Cache.LRU.IO", be used instead.
-module CacheDNS.Cache.LRU.IO.Internal where
-
+module CacheDNS.Cache.LRU.Atomic where
+-- 引入这个是为了隐藏相应的函数
 import Prelude hiding ( lookup, mod, take )
 
 import Control.Applicative ( (<$>) )

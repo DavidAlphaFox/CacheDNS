@@ -23,12 +23,12 @@ library
                        CacheDNS.DNS.Encode
                        CacheDNS.DNS.Decode
                        CacheDNS.Cache.LRU
-                       CacheDNS.Cache.LRU.IO
+                       CacheDNS.Cache.AtomicLRU
         
   Other-Modules:       CacheDNS.DNS.Internal 
                        CacheDNS.DNS.StateBinary
                        CacheDNS.Cache.LRU.Internal
-                       CacheDNS.Cache.LRU.IO.Internal
+                       CacheDNS.Cache.LRU.Atomic
 
   build-depends:       base >= 4.7 && < 5
                       , attoparsec

@@ -32,6 +32,7 @@ import CacheDNS.Cache.AtomicLRU as Cache
 -- from Main APP
 import CacheDNS.APP.Log as Log
 import CacheDNS.APP.Resolver as Resolver
+import CacheDNS.APP.CacheManager as CM
 
 
 data ServerConfig = ServerConfig { server_host :: Maybe String

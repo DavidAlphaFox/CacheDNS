@@ -7,8 +7,8 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Maybe
 
 import Control.Concurrent
-import Control.Concurrent.STM.TVar
-import Control.Concurrent.STM.TMVar
+import Control.Concurrent.Async
+import Control.Concurrent.STM
 
 import Control.Exception
 
@@ -23,9 +23,13 @@ import qualified Data.ByteString as BS
 
 import qualified Data.Configurator as C
 import qualified Data.Configurator.Types as C
+
 -- from My Library
-import Network.DNS
-import Network.DNS.Decode as Decode
+import Network.DNS as DNS
+import Network.DNS.Decode as DNS
+import Network.DNS.Types as DNS
+
+import Data.Cache.LRU as Cache
 
 -- from Main APP
 import qualified Log
@@ -33,6 +37,8 @@ import qualified Log
 
 data ServerConfig = ServerConfig { server_host :: Maybe String
                                  , server_port :: Maybe String
+                                 }
+data ServerShared = ServerShared { cache :: TVar (Cache.LRU (String,String) (Integer,DNS.DNSMessage))
                                  }
 nameM = "CacheDNS"                                
 
@@ -43,15 +49,20 @@ main = do
     
     server_host <- C.lookup conf "server.host" :: IO (Maybe String)
     server_port <- C.lookup conf "server.port" :: IO (Maybe String)
+    cache_size <- C.lookup conf "server.cache_size" :: IO (Maybe Integer)
 
     let serverConfig = ServerConfig { server_host = server_host
                                     , server_port = server_port
                                     }
-    udp serverConfig
+    cache <- atomically $ newTVar (newLRU cache_size)
+    let serverShared = ServerShared { cache = cache 
+
+                                    }
+    udp serverConfig serverShared
 
 
-udp :: ServerConfig  -> IO ()
-udp c = do
+udp :: ServerConfig -> ServerShared -> IO ()
+udp c s = do
     let nameF = nameM ++ ".udp"
     let maxLength = 512 -- 512B is max length of UDP message
                       -- due ot rfc1035
@@ -67,7 +78,7 @@ udp c = do
             infoM nameF $ "bound to " ++ (show $ addrAddress addr)
             forever $ do
                 (a, sa) <- recvFrom sock maxLength
-                let d = Decode.decode (BSL.fromStrict a)
+                let d = DNS.decode (BSL.fromStrict a)
                 infoM nameF $ (show d)
                 return ()
         )

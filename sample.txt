@@ -1,0 +1,7 @@
+Right (DNSMessage {header = DNSHeader {identifier = 55180, flags = DNSFlags {qOrR = QR_Response, opcode = OP_STD, authAnswer = False, trunCation =
+ False, recDesired = True, recAvailable = True, rcode = NoErr, authenData = False}}, question = [Question {qname = "mate.im.", qtype = A}], answer
+ = [ResourceRecord {rrname = "mate.im.", rrtype = A, rrttl = 900, rdata = 45.63.122.120}], authority = [], additional = []})
+
+Right (DNSMessage {header = DNSHeader {identifier = 30469, flags = DNSFlags {qOrR = QR_Query, opcode = OP_STD, authAn
+swer = False, trunCation = False, recDesired = True, recAvailable = False, rcode = NoErr, authenData = False}}, question = [Question {qname = "mat
+e.im.", qtype = A}], answer = [], authority = [], additional = []})

@@ -1,4 +1,4 @@
-module Transport.IPC.Mailbox (
+module CacheDNS.IPC.Mailbox (
     Mailbox,
     newMailbox,
     newMailboxIO,

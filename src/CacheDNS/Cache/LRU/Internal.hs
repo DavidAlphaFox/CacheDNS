@@ -10,7 +10,7 @@
 --
 -- If this degree of control isn't needed, consider using
 -- "Data.Cache.LRU" instead.
-module Data.Cache.LRU.Internal where
+module CacheDNS.Cache.LRU.Internal where
 
 import Control.Applicative (Applicative, pure, liftA2)
 import Data.Traversable (Traversable(traverse), foldMapDefault)

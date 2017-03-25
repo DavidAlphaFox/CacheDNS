@@ -57,7 +57,7 @@
 --   <http://www.haskell.org/ghc/docs/7.6.3/html/users_guide/type-class-extensions.html#overloaded-strings>
 --   for more information.
 --
-module Network.DNS.Lookup (
+module CacheDNS.DNS.Lookup (
     lookupA, lookupAAAA
   , lookupMX, lookupAviaMX, lookupAAAAviaMX
   , lookupNS
@@ -71,8 +71,8 @@ module Network.DNS.Lookup (
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS
 import Data.IP (IPv4, IPv6)
-import Network.DNS.Resolver as DNS
-import Network.DNS.Types
+import CacheDNS.DNS.Resolver as DNS
+import CacheDNS.DNS.Types
 
 ----------------------------------------------------------------
 

@@ -11,7 +11,7 @@
 -- (This implementation uses an MVar for coarse locking. It's unclear
 -- if anything else would give better performance, given that many
 -- calls alter the head of the access list.)
-module Data.Cache.LRU.IO
+module CacheDNS.Cache.LRU.IO
     ( AtomicLRU
     , newAtomicLRU
     , fromList
@@ -29,4 +29,4 @@ where
 
 import Prelude hiding ( lookup )
 
-import Data.Cache.LRU.IO.Internal
+import CacheDNS.Cache.LRU.IO.Internal

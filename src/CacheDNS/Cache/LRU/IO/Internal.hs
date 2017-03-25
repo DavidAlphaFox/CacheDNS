@@ -10,7 +10,7 @@
 -- possible to put an 'AtomicLRU' into a bad state with this module.
 -- It is highly recommended that the external interface,
 -- "Data.Cache.LRU.IO", be used instead.
-module Data.Cache.LRU.IO.Internal where
+module CacheDNS.Cache.LRU.IO.Internal where
 
 import Prelude hiding ( lookup, mod, take )
 
@@ -20,8 +20,8 @@ import qualified Control.Concurrent.MVar as MV
 
 import Control.Exception ( bracketOnError )
 
-import Data.Cache.LRU ( LRU )
-import qualified Data.Cache.LRU as LRU
+import CacheDNS.Cache.LRU ( LRU )
+import qualified CacheDNS.Cache.LRU as LRU
 
 import Data.Typeable (Typeable)
 

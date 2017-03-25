@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards, CPP #-}
 
-module Network.DNS.Encode (
+module CacheDNS.DNS.Encode (
     encode
   , encodeVC
   , composeQuery
@@ -18,8 +18,8 @@ import Data.ByteString.Lazy.Char8 (ByteString)
 import Data.IP (IP(..),fromIPv4, fromIPv6b)
 import Data.List (dropWhileEnd)
 import Data.Monoid ((<>))
-import Network.DNS.Internal
-import Network.DNS.StateBinary
+import CacheDNS.DNS.Internal
+import CacheDNS.DNS.StateBinary
 
 #if __GLASGOW_HASKELL__ < 709
 import Data.Monoid (mconcat)

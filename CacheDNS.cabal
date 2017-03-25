@@ -15,20 +15,20 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Network.DNS
-                       Network.DNS.Lookup
-                       Network.DNS.Resolver
-                       Network.DNS.Utils
-                       Network.DNS.Types
-                       Network.DNS.Encode
-                       Network.DNS.Decode
-                       Data.Cache.LRU
-                       Data.Cache.LRU.IO
+  exposed-modules:     CacheDNS.DNS
+                       CacheDNS.DNS.Lookup
+                       CacheDNS.DNS.Resolver
+                       CacheDNS.DNS.Utils
+                       CacheDNS.DNS.Types
+                       CacheDNS.DNS.Encode
+                       CacheDNS.DNS.Decode
+                       CacheDNS.Cache.LRU
+                       CacheDNS.Cache.LRU.IO
         
-  Other-Modules:       Network.DNS.Internal 
-                       Network.DNS.StateBinary
-                       Data.Cache.LRU.Internal
-                       Data.Cache.LRU.IO.Internal
+  Other-Modules:       CacheDNS.DNS.Internal 
+                       CacheDNS.DNS.StateBinary
+                       CacheDNS.Cache.LRU.Internal
+                       CacheDNS.Cache.LRU.IO.Internal
 
   build-depends:       base >= 4.7 && < 5
                       , attoparsec

@@ -1,6 +1,6 @@
 -- | Miscellaneous utility functions for processing DNS data.
 --
-module Network.DNS.Utils (
+module CacheDNS.DNS.Utils (
     normalize
   , normalizeCase
   , normalizeRoot
@@ -14,7 +14,7 @@ import qualified Data.ByteString.Char8 as BS (
   , pack )
 import Data.Char ( toLower )
 
-import Network.DNS.Types ( Domain )
+import CacheDNS.DNS.Types ( Domain )
 
 
 -- | Perform both 'normalizeCase' and 'normalizeRoot' on the given

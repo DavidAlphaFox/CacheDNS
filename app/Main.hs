@@ -25,11 +25,11 @@ import qualified Data.Configurator as C
 import qualified Data.Configurator.Types as C
 
 -- from My Library
-import Network.DNS as DNS
-import Network.DNS.Decode as DNS
-import Network.DNS.Types as DNS
+import CacheDNS.DNS as DNS
+import CacheDNS.DNS.Decode as DNS
+import CacheDNS.DNS.Types as DNS
 
-import Data.Cache.LRU as Cache
+import CacheDNS.Cache.LRU as Cache
 
 -- from Main APP
 import qualified Log

@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 
-module Network.DNS.Internal where
+module CacheDNS.DNS.Internal where
 
 import Control.Exception (Exception)
 import Data.ByteString (ByteString)

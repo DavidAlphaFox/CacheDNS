@@ -1,5 +1,5 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, CPP #-}
-module Network.DNS.StateBinary where
+module CacheDNS.DNS.StateBinary where
 
 import Control.Monad.State (State, StateT)
 import qualified Control.Monad.State as ST
@@ -19,7 +19,7 @@ import qualified Data.IntMap as IM
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Word (Word8, Word16, Word32)
-import Network.DNS.Types
+import CacheDNS.DNS.Types
 
 #if __GLASGOW_HASKELL__ < 709
 import Control.Applicative ((<$>), (<*))

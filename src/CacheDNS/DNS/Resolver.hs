@@ -1,7 +1,7 @@
 {-# LANGUAGE CPP, OverloadedStrings #-}
 
 -- | DNS Resolver and generic (lower-level) lookup functions.
-module Network.DNS.Resolver (
+module CacheDNS.DNS.Resolver (
   -- * Documentation
   -- ** Configuration for resolver
     FileOrNumericHost(..), ResolvConf(..), defaultResolvConf
@@ -23,11 +23,9 @@ import Control.Exception (bracket)
 import Data.Char (isSpace)
 import Data.List (isPrefixOf)
 import Data.Maybe (fromMaybe)
-import Network.BSD (getProtocolNumber)
-import Network.DNS.Decode
-import Network.DNS.Encode
-import Network.DNS.Internal
 import qualified Data.ByteString.Char8 as BS
+
+import Network.BSD (getProtocolNumber)
 import Network.Socket (HostName, Socket, SocketType(Stream, Datagram))
 import Network.Socket (AddrInfoFlag(..), AddrInfo(..), SockAddr(..))
 import Network.Socket (Family(AF_INET, AF_INET6), PortNumber(..))
@@ -36,6 +34,10 @@ import Network.Socket (defaultHints, defaultProtocol)
 import Prelude hiding (lookup)
 import System.Random (getStdRandom, randomR)
 import System.Timeout (timeout)
+
+import CacheDNS.DNS.Decode
+import CacheDNS.DNS.Encode
+import CacheDNS.DNS.Internal
 
 #if __GLASGOW_HASKELL__ < 709
 import Control.Applicative ((<$>), (<*>), pure)

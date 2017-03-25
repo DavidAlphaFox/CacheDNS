@@ -6,7 +6,7 @@
 --
 -- The interface this module provides is opaque.  If further control
 -- is desired, the "Data.Cache.LRU.Internal" module can be used.
-module Data.Cache.LRU
+module CacheDNS.Cache.LRU
     ( LRU
     , newLRU
     , fromList
@@ -25,4 +25,4 @@ where
 
 import Prelude hiding ( lookup )
 
-import Data.Cache.LRU.Internal
+import CacheDNS.Cache.LRU.Internal

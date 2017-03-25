@@ -1,9 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module CacheDNS.APP.Resolver
-    ( ResolverQueue
-    , newResolver
-    , addQuery
-    , loopQuery
+    ( loopQuery
     ) 
 where
 
@@ -13,58 +10,19 @@ import Control.Concurrent.STM
 
 import System.Log.Logger
 
-import Network.Socket hiding (recv, recvFrom, send, sendTo)
-import Network.Socket.ByteString 
-
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString as BS
-import Data.Map as M
-import Data.List as L
 
-import CacheDNS.DNS as DNS
-import CacheDNS.Cache.AtomicLRU as Cache
-import CacheDNS.IPC.Mailbox as Mailbox
+import qualified CacheDNS.DNS as DNS
+import qualified CacheDNS.IPC.Mailbox as MB
 
-import CacheDNS.APP.Log as Log
+import qualified CacheDNS.APP.JobQueue as JQ
+import qualified CacheDNS.APP.CacheManager as CM
 
-data ResolverQueue = ResolverQueue { jobs :: Mailbox.Mailbox (BS.ByteString,DNS.TYPE)
-                                    ,db :: TVar (M.Map DNS.Domain [(DNS.DNSMessage,SockAddr)])
-                                   } 
-newResolver :: IO ResolverQueue 
-newResolver = do 
-    jobs <- Mailbox.newMailboxIO
-    db <- atomically $  newTVar M.empty
-    return ResolverQueue{ jobs = jobs 
-                        , db = db 
-                        }
-
-addQuery :: (BS.ByteString, SockAddr) -> ResolverQueue -> IO ()
-addQuery (a,sa) queue = do
-    let database = db queue
-        mailbox = jobs queue
-
-    case DNS.decode (BSL.fromStrict a) of
-        Right message -> do
-            let query = head $ question message
-            let qn = qname query
-                qt = qtype query
-
-            atomically $ do
-                queries  <- readTVar database
-                case M.lookup qn queries of
-                    Nothing -> do
-                        Mailbox.writeMailbox mailbox (qn,qt)
-                        modifyTVar database $ M.insert qn [(message,sa)]
-                    Just l -> modifyTVar database $ M.insert qn ((message,sa):l)
-            return ()
-        Left e -> return ()
-                        
-loopQuery :: ResolverQueue -> IO()
+loopQuery :: JQ.JobQueue -> IO()
 loopQuery queue = do 
     infoM "CacheDNS.Resolver" $ "loopQuery....."
-    let mailbox = jobs queue
-        database = db queue
-    mail <- atomically $ do Mailbox.readMailbox mailbox
+    mail <- JQ.fetchJob queue
     rs <- DNS.makeResolvSeed DNS.defaultResolvConf
     r <- withResolver rs $ \resolver -> do
         let (qn,qt) = mail

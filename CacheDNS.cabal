@@ -5,10 +5,10 @@ description:         Please see README.md
 homepage:            https://github.com/githubuser/CacheDNS#readme
 license:             BSD3
 license-file:        LICENSE
-author:              Author name here
-maintainer:          example@example.com
-copyright:           2016 Author name here
-category:            Web
+author:              David.Gao
+maintainer:          david.alpha.fox@gmail.com
+copyright:           2016 ailink.io
+category:            App
 build-type:          Simple
 -- extra-source-files:
 cabal-version:       >=1.10

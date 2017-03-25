@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 -- from Haskell or other Library
 import Control.Monad
@@ -20,6 +21,8 @@ import Network.Socket.ByteString
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString as BS
 
+import qualified Data.Configurator as C
+import qualified Data.Configurator.Types as C
 -- from My Library
 import Network.DNS
 import Network.DNS.Decode as Decode
@@ -29,15 +32,20 @@ import qualified Log
 
 
 data ServerConfig = ServerConfig { server_host :: Maybe String
-                                 , server_port :: String
+                                 , server_port :: Maybe String
                                  }
 nameM = "CacheDNS"                                
 
 main :: IO ()
 main = do
     Log.setup [("", INFO)] 
-    let serverConfig = ServerConfig { server_host = (Just "0.0.0.0")
-                                    , server_port = "5354"
+    conf <- C.load [C.Required "application.conf"]
+    
+    server_host <- C.lookup conf "server.host" :: IO (Maybe String)
+    server_port <- C.lookup conf "server.port" :: IO (Maybe String)
+
+    let serverConfig = ServerConfig { server_host = server_host
+                                    , server_port = server_port
                                     }
     udp serverConfig
 
@@ -50,7 +58,7 @@ udp c = do
   
     infoM nameF $ "starting UDP server"
     let hints = defaultHints { addrSocketType = Datagram, addrFlags = [AI_ADDRCONFIG, AI_PASSIVE]}
-    addr:_ <- getAddrInfo (Just hints) (server_host c) (Just $ server_port c)
+    addr:_ <- getAddrInfo (Just hints) (server_host c) (server_port c)
     bracket 
         (socket (addrFamily addr) (addrSocketType addr) (addrProtocol addr))
         close

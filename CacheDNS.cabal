@@ -59,6 +59,7 @@ executable CacheDNS
                      , stm == 2.4.4.1
                      , mtl
                      , transformers == 0.4.2.0
+                     , configurator >= 0.3.0.0
                      , CacheDNS
   default-language:    Haskell2010
 

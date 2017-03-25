@@ -47,11 +47,18 @@ library
                       , safe == 0.3.*
   default-language:    Haskell2010
 
-executable CacheDNS-exe
+executable CacheDNS
   hs-source-dirs:      app
   main-is:             Main.hs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
-  build-depends:       base
+  build-depends:       base >= 4.7 && < 5
+                     , bytestring
+                     , binary
+                     , hslogger
+                     , network >= 2.3
+                     , stm == 2.4.4.1
+                     , mtl
+                     , transformers == 0.4.2.0
                      , CacheDNS
   default-language:    Haskell2010
 
@@ -59,7 +66,8 @@ test-suite CacheDNS-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Spec.hs
-  build-depends:       base
+  build-depends:       base >= 4.7 && < 5
+                     , stm == 2.4.4.1
                      , CacheDNS
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010

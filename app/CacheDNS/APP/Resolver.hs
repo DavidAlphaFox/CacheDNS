@@ -12,6 +12,7 @@ import Control.Concurrent.Async
 import Control.Concurrent.STM
 
 import System.Log.Logger
+import Network
 import Network.Socket hiding (recv, recvFrom, send, sendTo)
 
 import qualified Data.ByteString.Lazy as BSL
@@ -37,7 +38,7 @@ createResolver hps = do
     return $ ResolverServer { resolvers = rs }
     where 
         toPortNum :: Maybe String -> Maybe PortNumber
-        toPortNum (Just pn) = Just $ (read pn :: PortNumber)
+        toPortNum (Just pn) = Just $ fromInteger (read pn :: Integer)
         toPortNum Nothing = Nothing
         toResolvSeed hostPort  =  do
             let h = fromJust $ host hostPort

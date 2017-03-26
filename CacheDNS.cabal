@@ -58,7 +58,7 @@ executable CacheDNS
                      , binary
                      , text == 1.2.2.1
                      , hslogger
-                     , network >= 2.3
+                     , network >= 2.5
                      , iproute >= 1.3.2
                      , async
                      , stm == 2.4.4.1

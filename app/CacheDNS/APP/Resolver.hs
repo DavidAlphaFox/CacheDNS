@@ -18,10 +18,11 @@ import qualified CacheDNS.IPC.Mailbox as MB
 
 import qualified CacheDNS.APP.JobQueue as JQ
 import qualified CacheDNS.APP.CacheManager as CM
-
+name :: String 
+name = "CacheDNS.Resolver"
 loopQuery :: JQ.JobQueue -> CM.DNSCache -> IO()
 loopQuery queue cache = do 
-    infoM "CacheDNS.Resolver" $ "loopQuery....."
+    infoM name  $ "loopQuery....."
     mail <- JQ.fetchJob queue
     rs <- DNS.makeResolvSeed DNS.defaultResolvConf
     r <- DNS.withResolver rs $ \resolver -> do
@@ -31,7 +32,7 @@ loopQuery queue cache = do
         Right response -> do 
             CM.insertDNS response cache
             atomically $ do 
-                MB.writeMailbox (mailbox mail) (qname mail)
+                MB.writeMailbox (mailbox mail) ((qname mail),(qtype mail))
     where 
         message (m,mb) = m
         mailbox (m,mb) = mb

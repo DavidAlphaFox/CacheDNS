@@ -7,6 +7,9 @@ module CacheDNS.APP.CacheManager
     )
 where
 
+import System.IO
+import System.Log.Logger
+
 import qualified Data.ByteString as BS
 import Data.Ratio
 import Data.Time
@@ -24,8 +27,7 @@ timeInMillis :: IO Integer
 timeInMillis = (`div` 1000) <$> timeInMicros
 
 timeInSeconds :: IO Integer
-timeInSeconds = numerator . toRational  <$> getPOSIXTime
-
+timeInSeconds = (`div` 1000) <$> timeInMillis
 
 newDNSCache :: Maybe Integer -> IO DNSCache
 newDNSCache size = do

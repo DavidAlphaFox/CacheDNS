@@ -16,20 +16,20 @@ import qualified Data.ByteString as BS
 import qualified CacheDNS.DNS as DNS 
 import qualified CacheDNS.IPC.Mailbox as MB
 
-data JobQueue = JobQueue { queue :: MB.Mailbox (DNS.DNSMessage, (MB.Mailbox DNS.Domain))} 
+data JobQueue = JobQueue { queue :: MB.Mailbox (DNS.DNSMessage, MB.Mailbox (DNS.Domain,DNS.TYPE)) } 
 
 newJobQueue :: IO JobQueue 
 newJobQueue = do 
     queue <- MB.newMailboxIO
     return JobQueue{ queue = queue }
 
-addJob :: DNS.DNSMessage -> (MB.Mailbox DNS.Domain) -> JobQueue -> IO ()
+addJob :: DNS.DNSMessage -> MB.Mailbox (DNS.Domain,DNS.TYPE) -> JobQueue -> IO ()
 addJob message mb jobs = do 
     let mailbox = queue jobs
     atomically $ MB.writeMailbox mailbox (message,mb)
     
 
-fetchJob :: JobQueue -> IO (DNS.DNSMessage, (MB.Mailbox DNS.Domain))
+fetchJob :: JobQueue -> IO (DNS.DNSMessage, MB.Mailbox (DNS.Domain,DNS.TYPE))
 fetchJob jobs = do
     let mailbox = queue jobs
     mail <- atomically $ MB.readMailbox mailbox

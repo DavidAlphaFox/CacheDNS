@@ -5,6 +5,7 @@ module CacheDNS.APP.Resolver
     ) 
 where
 
+import Control.Applicative
 
 import Control.Concurrent
 import Control.Concurrent.Async

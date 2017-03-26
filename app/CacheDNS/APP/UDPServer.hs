@@ -55,8 +55,8 @@ hint message cache = do
         rtype m =  DNS.qtype $ question m
         identifier m = DNS.identifier $ DNS.header m
 
-create :: IO UDPServer 
-create = do 
+createUDPServer :: IO UDPServer 
+createUDPServer = do 
     db <- atomically $  newTVar M.empty
     mailbox  <- MB.newMailboxIO
     return UDPServer {db = db, mailbox = mailbox}
@@ -125,7 +125,7 @@ loopServe sock cache jobs server = do
 
 serve :: ServerConfig -> CM.DNSCache -> JQ.JobQueue -> IO ()
 serve conf cache jobs = do
-    server <- create
+    server <- createUDPServer
     infoM name $ "starting UDP server"
     let hints = defaultHints { addrSocketType = Datagram, addrFlags = [AI_ADDRCONFIG, AI_PASSIVE]}
     addr:_ <- getAddrInfo (Just hints) (server_host conf) (server_port conf)

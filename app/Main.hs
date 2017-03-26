@@ -12,10 +12,12 @@ import Control.Concurrent.STM
 
 import Control.Exception
 
+
 import System.IO
 import System.Log.Logger
 
-
+import qualified Data.List as L
+import Data.Maybe
 import qualified Data.Configurator as C
 import qualified Data.Configurator.Types as C
 
@@ -27,8 +29,19 @@ import qualified CacheDNS.APP.JobQueue as JQ
 import qualified CacheDNS.APP.UDPServer as UDPServer
 import CacheDNS.APP.Types
 
-nameM = "CacheDNS"                                
+name = "CacheDNS"                                
 
+loadUPStream :: C.Config -> IO (Maybe [HostPort])
+loadUPStream conf = do
+    upstream <- C.lookup conf "resolver.upstream" :: IO (Maybe [String])
+    forM upstream (\l -> return $ L.map toHostPort l) 
+    where 
+        toHostPort v = 
+            let (host,port) = L.break (== ':') v
+            in 
+            HostPort { host = Just $ host 
+                     , port = Just $ (L.drop 1 port)
+                     }
 main :: IO ()
 main = do
     Log.setup [("", INFO)] 
@@ -37,12 +50,13 @@ main = do
     host <- C.lookup conf "server.host" :: IO (Maybe String)
     port <- C.lookup conf "server.port" :: IO (Maybe String)
     cache_size <- C.lookup conf "server.cache_size" :: IO (Maybe Integer)
-
+    upstream <- loadUPStream conf 
     let serverConfig = ServerConfig { server_host = host
                                     , server_port = port 
                                     }
     cache <- CM.newDNSCache cache_size
     jobs <- JQ.newJobQueue
-    forkIO $ forever $ Resolver.loopQuery jobs cache
+    rs <- Resolver.createResolver $ fromJust upstream
+    forkIO $ forever $ Resolver.loopQuery jobs cache rs
     UDPServer.serve serverConfig cache jobs
     return ()

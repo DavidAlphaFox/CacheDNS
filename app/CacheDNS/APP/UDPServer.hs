@@ -81,7 +81,7 @@ loopServe :: Socket -> CM.DNSCache -> JQ.JobQueue -> UDPServer -> IO ()
 loopServe sock cache jobs server = do
     -- 512B is max length of UDP message
     -- due ot rfc1035
-    race_ receiver sender
+    race_  sender receiver
     where 
         loopResponse message (m,sa) = 
             let reqID = DNS.identifier $ DNS.header m 
@@ -92,7 +92,7 @@ loopServe sock cache jobs server = do
             void $ sendTo sock (BSL.toStrict $ DNS.encode m2) sa
         requestKey (qn,qt) = (qn,DNS.typeToInt qt)
         receiver = do
-            infoM (name ++ ".receiver") $ "receiver running ..."
+            -- infoM (name ++ ".receiver") $ "receiver running ..."
             let maxLength = 512
             (a,sa) <- recvFrom sock maxLength
             case DNS.decode (BSL.fromStrict a) of
@@ -104,12 +104,15 @@ loopServe sock cache jobs server = do
                 Left e -> return ()
             receiver
         sender = do
+            let database = db server
+            let mb = mailbox server
             infoM (name ++ ".sender") $ "sender running ..."
-            mail <- atomically $ MB.readMailbox (mailbox server)
+            mail <- atomically $ MB.readMailbox mb
+            infoM (name ++ ".sender") $ "reading mail ..." ++ (show mail)
             maybeQueries <- atomically $ do
-                queries  <- readTVar (db server)
+                queries  <- readTVar database
                 let qs = M.lookup (requestKey mail) queries 
-                modifyTVar (db server) $ M.delete (requestKey mail)
+                modifyTVar database $ M.delete (requestKey mail)
                 return qs
             case maybeQueries of
                 Nothing -> return ()
@@ -135,5 +138,5 @@ serve conf cache jobs = do
         (\sock -> do
             bind sock (addrAddress addr)
             infoM name $ "bound to " ++ (show $ addrAddress addr)
-            loopServe sock cache jobs server
+            forever $ loopServe sock cache jobs server
         )

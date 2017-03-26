@@ -13,6 +13,7 @@ import System.IO
 import System.Log.Logger
 
 import qualified Data.ByteString as BS
+import qualified Data.List as L
 import Data.Ratio
 import Data.Time
 import Data.Time.Clock.POSIX
@@ -40,13 +41,16 @@ insertDNS :: DNS.DNSMessage -> DNSCache -> IO ()
 insertDNS message cache = do
     let c = lru cache
     timestamp <- timeInSeconds
-    let expired = timestamp + (toInteger (ttl message))
-    Cache.insert ((domain message),(rtype message)) (expired,message) c
+    if (L.length $ DNS.answer message) > 0 then do 
+        let expired = timestamp + (toInteger (ttl message))
+        Cache.insert ((domain message),(qtype message)) (expired,message) c
+    else Cache.insert ((domain message),(qtype message)) (timestamp + 600 ,message) c
     where 
-        ans m = head $ DNS.answer message
-        domain m = DNS.rrname $ ans m
+        ans m = head $ DNS.answer m
+        question m = head $ DNS.question m
+        domain m = DNS.qname $ question m
         ttl m = DNS.rrttl $ ans m
-        rtype m = DNS.typeToInt $ DNS.rrtype $ ans m
+        qtype m = DNS.typeToInt $ DNS.qtype $ question m
         
 lookupDNS :: DNS.Domain -> DNS.TYPE -> DNSCache -> IO (Maybe DNS.DNSMessage)
 lookupDNS domain rtype cache = do

@@ -34,7 +34,7 @@ name = "CacheDNS"
 loadUPStream :: C.Config -> IO (Maybe [HostPort])
 loadUPStream conf = do
     upstream <- C.lookup conf "resolver.upstream" :: IO (Maybe [String])
-    forM upstream (\l -> return $ L.map toHostPort l) 
+    return $ Just $ L.map toHostPort $ fromJust upstream
     where 
         toHostPort v = 
             let (host,port) = L.break (== ':') v

@@ -38,7 +38,7 @@ createResolver hps = do
     return $ ResolverServer { resolvers = rs }
     where 
         toPortNum :: Maybe String -> Maybe PortNumber
-        toPortNum (Just pn) = Just $ fromInteger (read pn :: Integer)
+        toPortNum (Just pn) = Just $ fromInteger $ toInteger (read pn :: Int)
         toPortNum Nothing = Nothing
         toResolvSeed hostPort  =  do
             let h = fromJust $ host hostPort

@@ -12,7 +12,7 @@ import Control.Concurrent.STM
 
 import Control.Exception
 
-
+import System.Posix.Daemonize
 import System.IO
 import System.Log.Logger
 
@@ -42,11 +42,10 @@ loadUPStream conf = do
             HostPort { host = Just $ host 
                      , port = Just $ (L.drop 1 port)
                      }
-main :: IO ()
-main = do
-    Log.setup [("", INFO)] 
-    conf <- C.load [C.Required "application.conf"]
-    
+serviceLoop :: C.Config -> IO ()
+serviceLoop conf = do 
+    Log.setup [("", INFO)]
+        
     host <- C.lookup conf "server.host" :: IO (Maybe String)
     port <- C.lookup conf "server.port" :: IO (Maybe String)
     cache_size <- C.lookup conf "server.cache_size" :: IO (Maybe Integer)
@@ -59,4 +58,9 @@ main = do
     rs <- Resolver.createResolver $ fromJust upstream
     forkIO $ forever $ Resolver.loopQuery jobs cache rs
     UDPServer.serve serverConfig cache jobs
-    return ()
+
+main :: IO ()
+main = do
+    conf <- C.load [C.Required "application.conf"]
+    daemonize $ serviceLoop conf
+

@@ -106,9 +106,8 @@ loopServe sock cache jobs server = do
         sender = do
             let database = db server
             let mb = mailbox server
-            infoM (name ++ ".sender") $ "sender running ..."
+            -- infoM (name ++ ".sender") $ "sender running ..."
             mail <- atomically $ MB.readMailbox mb
-            infoM (name ++ ".sender") $ "reading mail ..." ++ (show mail)
             maybeQueries <- atomically $ do
                 queries  <- readTVar database
                 let qs = M.lookup (requestKey mail) queries 

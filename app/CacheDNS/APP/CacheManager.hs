@@ -7,6 +7,8 @@ module CacheDNS.APP.CacheManager
     )
 where
 
+import Control.Applicative
+
 import System.IO
 import System.Log.Logger
 

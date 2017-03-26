@@ -31,7 +31,7 @@ library
                        CacheDNS.Cache.LRU.Internal
                        CacheDNS.Cache.LRU.Atomic
 
-  build-depends:       base >= 4.7 && < 5
+  build-depends:       base >= 4.6 && < 5
                       , attoparsec
                       , binary
                       , bytestring
@@ -53,7 +53,7 @@ executable CacheDNS
   hs-source-dirs:      app
   main-is:             Main.hs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
-  build-depends:       base >= 4.7 && < 5
+  build-depends:       base >= 4.6 && < 5
                      , bytestring
                      , binary
                      , text == 1.2.2.1

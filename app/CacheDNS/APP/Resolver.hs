@@ -19,38 +19,21 @@ import qualified CacheDNS.IPC.Mailbox as MB
 import qualified CacheDNS.APP.JobQueue as JQ
 import qualified CacheDNS.APP.CacheManager as CM
 
-loopQuery :: JQ.JobQueue -> IO()
-loopQuery queue = do 
+loopQuery :: JQ.JobQueue -> CM.DNSCache -> IO()
+loopQuery queue cache = do 
     infoM "CacheDNS.Resolver" $ "loopQuery....."
     mail <- JQ.fetchJob queue
     rs <- DNS.makeResolvSeed DNS.defaultResolvConf
-    r <- withResolver rs $ \resolver -> do
-        let (qn,qt) = mail
-        DNS.lookupRaw resolver qn qt
-    infoM "CacheDNS.Resolver" $  (show r)
+    r <- DNS.withResolver rs $ \resolver -> do
+        DNS.lookupRaw resolver (qname mail) (qtype mail)
     case r of
-        Right message -> do
-            let response = head $ answer message
-            let rn = rrname response
-                rd = rdata response
-            
-            maybeQueries <- atomically $ do
-                queries  <- readTVar database
-                let qs = M.lookup rn queries 
-                modifyTVar database $ M.delete rn
-                return qs
-            case maybeQueries of
-                Nothing -> return ()
-                Just l -> do
-                    infoM "CacheDNS.Resolver" $ (show l)
-                    let l2 = L.map loopResponse l
-                    infoM "CacheDNS.Resolver" $ (show l2)
-                    return ()
-                    where
-                        loopResponse (m,sa) = do
-                            let reqID = identifier $ header m
-                            let hd = header message
-                                nhd = hd {identifier = reqID}
-                                m2 = message {header = nhd}
-                            (m2,sa)
         Left e -> return ()
+        Right response -> do 
+            CM.insertDNS response cache
+            atomically $ do 
+                MB.writeMailbox (mailbox mail) (qname mail)
+    where 
+        message (m,mb) = m
+        mailbox (m,mb) = mb
+        qname mail = DNS.qname $ head $ DNS.question $ message mail
+        qtype mail = DNS.qtype $ head $ DNS.question $ message mail

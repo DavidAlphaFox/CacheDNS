@@ -62,5 +62,6 @@ serviceLoop conf = do
 main :: IO ()
 main = do
     conf <- C.load [C.Required "application.conf"]
-    daemonize $ serviceLoop conf
+    -- daemonize $ serviceLoop conf
+    serviceLoop conf
 

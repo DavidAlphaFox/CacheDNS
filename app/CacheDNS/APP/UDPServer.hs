@@ -32,7 +32,7 @@ import qualified CacheDNS.DNS as DNS
 import qualified CacheDNS.IPC.Mailbox as MB
 import qualified CacheDNS.APP.JobQueue as JQ
 
-data UDPServer = UDPServer { db :: TVar (M.Map (DNS.Domain,Int) [(DNS.DNSMessage,SockAddr)])
+data UDPServer = UDPServer { db :: TVar (M.Map (DNS.Domain,Int) [(Int,SockAddr)])
                             ,mailbox :: MB.Mailbox (DNS.Domain,DNS.TYPE)
                             }
 name :: String
@@ -69,11 +69,12 @@ asyncQuery message sa jobs server = do
         queries  <- readTVar database
         let key = ((domain message),(rtype message))
         case M.lookup key queries of
-            Nothing -> modifyTVar database $ M.insert key [(message,sa)]
-            Just l -> modifyTVar database $ M.insert key ((message,sa):l)
+            Nothing -> modifyTVar database $ M.insert key [((reqID message),sa)]
+            Just l -> modifyTVar database $ M.insert key (((reqID message),sa):l)
     JQ.addJob message (mailbox server) jobs
     where 
         question m = head $ DNS.question m
+        reqID m = DNS.identifier $ DNS.header m 
         domain m = DNS.qname $ question m
         rtype m = DNS.typeToInt $ DNS.qtype $ question m
 
@@ -83,8 +84,8 @@ loopServe sock cache jobs server = do
     -- due ot rfc1035
     race_  sender receiver
     where 
-        loopResponse message (m,sa) = 
-            let reqID = DNS.identifier $ DNS.header m 
+        loopResponse message (reqID,sa) = 
+            let 
                 hd = DNS.header message
                 nhd = hd {DNS.identifier = reqID}
                 m2 = message {DNS.header = nhd}

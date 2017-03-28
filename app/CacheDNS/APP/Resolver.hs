@@ -25,6 +25,7 @@ import qualified CacheDNS.IPC.Mailbox as MB
 
 import qualified CacheDNS.APP.JobQueue as JQ
 import qualified CacheDNS.APP.CacheManager as CM
+import qualified CacheDNS.APP.DNSHelper as DH
 import CacheDNS.APP.Types 
 
 data ResolverServer = ResolverServer { resolvers :: [DNS.ResolvSeed] }
@@ -60,18 +61,17 @@ loopQuery :: JQ.JobQueue -> CM.DNSCache -> ResolverServer ->  IO()
 loopQuery queue cache server = do 
     infoM name  $ "loopQuery....."
     mail <- JQ.fetchJob queue
-    r <- DNS.withResolvers (resolvers server) $ \resolvers -> do
-        resolv serverCount resolvers (qname mail) (qtype mail)
+    let (qname,qtype) = message mail
+    r <- DNS.withResolvers (resolvers server) $ \resolvers -> do 
+        resolv serverCount resolvers qname (DNS.intToType qtype)
     case r of
         -- here should retry and notify sender to remove task
         Left e -> return ()
         Right response -> do 
             CM.insertDNS response cache
-            atomically $ do 
-                MB.writeMailbox (mailbox mail) ((qname mail),(qtype mail))
+    atomically $ do 
+            MB.writeMailbox (mailbox mail) (qname,qtype)
     where 
         message (m,mb) = m
         mailbox (m,mb) = mb
-        qname mail = DNS.qname $ head $ DNS.question $ message mail
-        qtype mail = DNS.qtype $ head $ DNS.question $ message mail
         serverCount = L.length $ resolvers server

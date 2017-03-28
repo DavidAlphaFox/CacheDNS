@@ -25,35 +25,36 @@ import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString as BS
 import qualified Data.Map as M
 import qualified Data.List as L
+import Data.Maybe
 
-import CacheDNS.APP.Types
 import qualified CacheDNS.APP.CacheManager as CM
 import qualified CacheDNS.DNS as DNS 
 import qualified CacheDNS.IPC.Mailbox as MB
-import qualified CacheDNS.APP.JobQueue as JQ
 
-data UDPServer = UDPServer { db :: TVar (M.Map (DNS.Domain,Int) [(Int,SockAddr)])
-                            ,mailbox :: MB.Mailbox (DNS.Domain,DNS.TYPE)
+import CacheDNS.APP.Types
+import qualified CacheDNS.APP.JobQueue as JQ
+import qualified CacheDNS.APP.DNSHelper as DH
+
+data UDPServer = UDPServer { db :: TVar (M.Map DNSKey [(Int,SockAddr)])
+                            ,mailbox :: MB.Mailbox DNSKey
                             }
 name :: String
 name = "CacheDNS.udp"
 
 hint :: DNS.DNSMessage -> CM.DNSCache -> IO (Maybe DNS.DNSMessage)
 hint message cache = do
-    val <- CM.lookupDNS (domain message) (rtype message) cache 
+    val <- CM.lookupDNS (qname,qtype)  cache 
     case val of
         Nothing -> return Nothing
         Just r -> do
-            infoM  name $ "Hinted: " ++ (show (domain message))
-            let rid = identifier message
+            infoM  name $ "Hinted: " ++ (show qname)
+            let rid = DH.identifier message
                 hd = DNS.header r 
                 newHeader = hd { DNS.identifier = rid}
             return $ Just r{DNS.header = newHeader}
     where 
-        question m = head $ DNS.question message
-        domain m = DNS.qname $ question m
-        rtype m =  DNS.qtype $ question m
-        identifier m = DNS.identifier $ DNS.header m
+        qname  = fromJust $ DH.qname message 
+        qtype = fromJust $ DH.qtypeInt message 
 
 createUDPServer :: IO UDPServer 
 createUDPServer = do 
@@ -63,20 +64,18 @@ createUDPServer = do
 
 asyncQuery :: DNS.DNSMessage -> SockAddr -> JQ.JobQueue -> UDPServer -> IO()
 asyncQuery message sa jobs server = do
-    infoM name $ "asyncQuery: " ++ (show (domain message))
+    infoM name $ "asyncQuery: " ++ (show qname)
     let database  =  db server 
+        key = (qname,qtype) :: DNSKey
     atomically $ do
         queries  <- readTVar database
-        let key = ((domain message),(rtype message))
         case M.lookup key queries of
-            Nothing -> modifyTVar database $ M.insert key [((reqID message),sa)]
-            Just l -> modifyTVar database $ M.insert key (((reqID message),sa):l)
-    JQ.addJob message (mailbox server) jobs
+            Nothing -> modifyTVar database $ M.insert key [((DH.identifier message),sa)]
+            Just l -> modifyTVar database $ M.insert key (((DH.identifier message),sa):l)
+    JQ.addJob key (mailbox server) jobs
     where 
-        question m = head $ DNS.question m
-        reqID m = DNS.identifier $ DNS.header m 
-        domain m = DNS.qname $ question m
-        rtype m = DNS.typeToInt $ DNS.qtype $ question m
+        qname  = fromJust $ DH.qname message 
+        qtype = fromJust $ DH.qtypeInt message 
 
 loopServe :: Socket -> CM.DNSCache -> JQ.JobQueue -> UDPServer -> IO ()
 loopServe sock cache jobs server = do
@@ -91,13 +90,12 @@ loopServe sock cache jobs server = do
                 m2 = message {DNS.header = nhd}
             in
             void $ sendTo sock (BSL.toStrict $ DNS.encode m2) sa
-        requestKey (qn,qt) = (qn,DNS.typeToInt qt)
         receiver = do
             -- infoM (name ++ ".receiver") $ "receiver running ..."
             let maxLength = 512
             (a,sa) <- recvFrom sock maxLength
             case DNS.decode (BSL.fromStrict a) of
-                Right m -> do 
+                Right m -> do
                     r <- hint m cache
                     case r of
                         Nothing -> asyncQuery m sa jobs server
@@ -108,17 +106,17 @@ loopServe sock cache jobs server = do
             let database = db server
             let mb = mailbox server
             -- infoM (name ++ ".sender") $ "sender running ..."
-            mail <- atomically $ MB.readMailbox mb
-            maybeQueries <- atomically $ do
+            key <- atomically $ MB.readMailbox mb
+            maybeQueries <-  atomically $ do
                 queries  <- readTVar database
-                let qs = M.lookup (requestKey mail) queries 
-                modifyTVar database $ M.delete (requestKey mail)
+                let qs = M.lookup key queries 
+                modifyTVar database $ M.delete key
                 return qs
+
             case maybeQueries of
                 Nothing -> return ()
                 Just l -> do
-                    let (qn,qt) = mail 
-                    val <- CM.lookupDNS qn qt cache 
+                    val <- CM.lookupDNS key cache 
                     case val of
                         Nothing -> return ()
                         Just r -> do

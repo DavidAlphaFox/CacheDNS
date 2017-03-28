@@ -15,13 +15,17 @@ import System.Log.Logger
 import qualified Data.ByteString as BS
 import qualified Data.List as L
 import Data.Ratio
+import Data.Maybe
 import Data.Time
 import Data.Time.Clock.POSIX
 
 import qualified CacheDNS.DNS as DNS
 import qualified CacheDNS.Cache.AtomicLRU as Cache
 
-data DNSCache = DNSCache { lru :: Cache.AtomicLRU (DNS.Domain , Int) (Integer,DNS.DNSMessage)}
+import CacheDNS.APP.Types
+import qualified CacheDNS.APP.DNSHelper as DH
+
+data DNSCache = DNSCache { lru :: Cache.AtomicLRU DNSKey (Integer,DNS.DNSMessage)}
 
 timeInMicros :: IO Integer
 timeInMicros = numerator . toRational . (* 1000000) <$> getPOSIXTime
@@ -41,21 +45,17 @@ insertDNS :: DNS.DNSMessage -> DNSCache -> IO ()
 insertDNS message cache = do
     let c = lru cache
     timestamp <- timeInSeconds
-    if (L.length $ DNS.answer message) > 0 then do 
-        let expired = timestamp + (toInteger (ttl message))
-        Cache.insert ((domain message),(qtype message)) (expired,message) c
-    else Cache.insert ((domain message),(qtype message)) (timestamp + 600 ,message) c
+    case DH.ttl message of
+        Just ttl -> Cache.insert (qname ,qtype) ( (expired timestamp ttl),message) c
+        Nothing -> Cache.insert (qname ,qtype) ( (expired timestamp 600),message) c
     where 
-        ans m = head $ DNS.answer m
-        question m = head $ DNS.question m
-        domain m = DNS.qname $ question m
-        ttl m = DNS.rrttl $ ans m
-        qtype m = DNS.typeToInt $ DNS.qtype $ question m
+        expired ts tl = ts + (toInteger tl)
+        qname  = fromJust $ DH.qname message 
+        qtype = fromJust $ DH.qtypeInt message 
         
-lookupDNS :: DNS.Domain -> DNS.TYPE -> DNSCache -> IO (Maybe DNS.DNSMessage)
-lookupDNS domain rtype cache = do
+lookupDNS :: DNSKey -> DNSCache -> IO (Maybe DNS.DNSMessage)
+lookupDNS key cache = do
     let c = lru cache
-        key = (domain, (DNS.typeToInt rtype))
     timestamp <- timeInSeconds
     val <- Cache.lookup key c
     case val of

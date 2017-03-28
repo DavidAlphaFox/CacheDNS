@@ -63,6 +63,7 @@ loopQuery queue cache server = do
     r <- DNS.withResolvers (resolvers server) $ \resolvers -> do
         resolv serverCount resolvers (qname mail) (qtype mail)
     case r of
+        -- here should retry and notify sender to remove task
         Left e -> return ()
         Right response -> do 
             CM.insertDNS response cache

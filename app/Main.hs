@@ -57,7 +57,7 @@ serviceLoop conf = do
     jobs <- JQ.newJobQueue
     rs <- Resolver.createResolver $ fromJust upstream
     replicateM_ 4 $ forkIO $ forever $ Resolver.loopQuery jobs cache rs
-    UDPServer.serve serverConfig cache jobs
+    forever $ UDPServer.serve serverConfig cache jobs
 
 main :: IO ()
 main = do

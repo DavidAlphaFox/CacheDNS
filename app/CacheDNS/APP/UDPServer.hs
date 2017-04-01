@@ -138,5 +138,5 @@ serve conf cache jobs = do
         (\sock -> do
             bind sock (addrAddress addr)
             infoM name $ "bound to " ++ (show $ addrAddress addr)
-            forever $ loopServe sock cache jobs server
+            loopServe sock cache jobs server
         )

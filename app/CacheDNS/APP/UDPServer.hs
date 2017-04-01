@@ -82,14 +82,16 @@ loopServe sock cache jobs server = do
     -- 512B is max length of UDP message
     -- due ot rfc1035
     race_  sender receiver
-    where 
+    where
+        sendAnswer message sa = void $ forkIO $ do
+          void $ sendTo sock (BSL.toStrict $ DNS.encode message) sa
         loopResponse message (reqID,sa) = 
             let 
                 hd = DNS.header message
                 nhd = hd {DNS.identifier = reqID}
                 m2 = message {DNS.header = nhd}
             in
-            void $ sendTo sock (BSL.toStrict $ DNS.encode m2) sa
+              sendAnswer m2 sa
         receiver = do
             -- infoM (name ++ ".receiver") $ "receiver running ..."
             let maxLength = 512
@@ -99,7 +101,7 @@ loopServe sock cache jobs server = do
                     r <- hint m cache
                     case r of
                         Nothing -> asyncQuery m sa jobs server
-                        Just h -> void $ sendTo sock (BSL.toStrict $ DNS.encode h) sa
+                        Just h -> sendAnswer h sa
                 Left e -> return ()
             receiver
         sender = do

@@ -83,8 +83,7 @@ loopServe sock cache jobs server = do
     -- due ot rfc1035
     race_  sender receiver
     where
-        sendAnswer message sa = void $ forkIO $ do
-          void $ sendTo sock (BSL.toStrict $ DNS.encode message) sa
+        sendAnswer message sa = void $ sendTo sock (BSL.toStrict $ DNS.encode message) sa
         loopResponse message (reqID,sa) = 
             let 
                 hd = DNS.header message

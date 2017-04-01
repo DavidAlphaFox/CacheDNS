@@ -21,6 +21,8 @@ import Data.Maybe
 import qualified Data.Configurator as C
 import qualified Data.Configurator.Types as C
 
+import System.Remote.Monitoring as Monitor
+
 -- from Main APP
 import qualified CacheDNS.APP.Log as Log
 import qualified CacheDNS.APP.Resolver as Resolver
@@ -45,7 +47,7 @@ loadUPStream conf = do
 serviceLoop :: C.Config -> IO ()
 serviceLoop conf = do 
     Log.setup [("", INFO)]
-        
+    Monitor.forkServer "0.0.0.0" 8000    
     host <- C.lookup conf "server.host" :: IO (Maybe String)
     port <- C.lookup conf "server.port" :: IO (Maybe String)
     cache_size <- C.lookup conf "server.cache_size" :: IO (Maybe Integer)

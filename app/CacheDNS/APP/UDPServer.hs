@@ -131,7 +131,7 @@ serve conf cache jobs = do
     infoM name $ "starting UDP server"
     let hints = defaultHints { addrSocketType = Datagram, addrFlags = [AI_ADDRCONFIG, AI_PASSIVE]}
     addr:_ <- getAddrInfo (Just hints) (server_host conf) (server_port conf)
-    bracket 
+    bracketOnError 
         (socket (addrFamily addr) (addrSocketType addr) (addrProtocol addr))
         close
         (\sock -> do

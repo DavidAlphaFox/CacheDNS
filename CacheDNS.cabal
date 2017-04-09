@@ -27,6 +27,7 @@ library
                        CacheDNS.IPC.Mailbox
                        CacheDNS.Crypto.Cryptor
                        CacheDNS.Concurrent.SemVar
+                       CacheDNS.Concurrent.CondVar
         
   Other-Modules:       CacheDNS.DNS.Internal 
                        CacheDNS.DNS.StateBinary

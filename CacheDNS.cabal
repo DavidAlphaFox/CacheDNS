@@ -25,11 +25,13 @@ library
                        CacheDNS.Cache.LRU
                        CacheDNS.Cache.AtomicLRU
                        CacheDNS.IPC.Mailbox
+                       CacheDNS.Crypto.Cryptor
         
   Other-Modules:       CacheDNS.DNS.Internal 
                        CacheDNS.DNS.StateBinary
                        CacheDNS.Cache.LRU.Internal
                        CacheDNS.Cache.LRU.Atomic
+                       CacheDNS.Crypto.Common
 
   build-depends:       base >= 4.6 && < 5
                       , attoparsec
@@ -39,6 +41,7 @@ library
                       , conduit >= 1.1 && < 2
                       , conduit-extra >= 1.1 && < 2
                       , containers >= 0.2 && < 0.6
+                      , unordered-containers >= 0.2
                       , contravariant >= 0.5 && < 2
                       , iproute >= 1.3.2
                       , mtl

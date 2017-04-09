@@ -26,6 +26,7 @@ library
                        CacheDNS.Cache.AtomicLRU
                        CacheDNS.IPC.Mailbox
                        CacheDNS.Crypto.Cryptor
+                       CacheDNS.Concurrent.SemVar
         
   Other-Modules:       CacheDNS.DNS.Internal 
                        CacheDNS.DNS.StateBinary

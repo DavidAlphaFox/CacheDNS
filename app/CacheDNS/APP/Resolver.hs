@@ -33,7 +33,7 @@ data ResolverServer = ResolverServer { resolvers :: [DNS.ResolvSeed] }
 name :: String 
 name = "CacheDNS.Resolver"
 
-createResolver :: [HostPort] -> IO ResolverServer
+createResolver :: [DNSServer] -> IO ResolverServer
 createResolver hps = do 
     rs <- mapM DNS.makeResolvSeed $ L.map toResolvSeed hps
     return $ ResolverServer { resolvers = rs }
@@ -41,9 +41,9 @@ createResolver hps = do
         toPortNum :: Maybe String -> Maybe PortNumber
         toPortNum (Just pn) = Just $ fromInteger $ toInteger (read pn :: Int)
         toPortNum Nothing = Nothing
-        toResolvSeed hostPort  =  do
-            let h = fromJust $ host hostPort
-                p = toPortNum $ port hostPort
+        toResolvSeed dnsServer  =  do
+            let h = fromJust $ host dnsServer
+                p = toPortNum $ port dnsServer
             case p of
                 Just pn -> DNS.defaultResolvConf { DNS.resolvInfo = DNS.RCHostPort h pn }
                 Nothing -> DNS.defaultResolvConf { DNS.resolvInfo = DNS.RCHostName h}

@@ -29,11 +29,12 @@ import qualified CacheDNS.APP.Resolver as Resolver
 import qualified CacheDNS.APP.CacheManager as CM
 import qualified CacheDNS.APP.JobQueue as JQ
 import qualified CacheDNS.APP.UDPServer as UDPServer
+import qualified CacheDNS.APP.CmdParser as CP
 import CacheDNS.APP.Types
 
 name = "CacheDNS"                                
 
-loadUPStream :: C.Config -> IO (Maybe [HostPort])
+loadUPStream :: C.Config -> IO (Maybe [DNSServer])
 loadUPStream conf = do
     upstream <- C.lookup conf "resolver.upstream" :: IO (Maybe [String])
     return $ Just $ L.map toHostPort $ fromJust upstream
@@ -41,9 +42,11 @@ loadUPStream conf = do
         toHostPort v = 
             let (host,port) = L.break (== ':') v
             in 
-            HostPort { host = Just $ host 
-                     , port = Just $ (L.drop 1 port)
-                     }
+            DNSServer { host = Just $ host 
+                      , port = Just $ (L.drop 1 port)
+                      , method = Nothing
+                      , password = Nothing
+                      }
 serviceLoop :: C.Config -> IO ()
 serviceLoop conf = do 
     Log.setup [("", INFO)]

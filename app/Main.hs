@@ -14,6 +14,7 @@ import Control.Exception
 
 import System.Posix.Daemonize
 import System.IO
+import System.Exit (exitFailure)
 import System.Log.Logger
 
 import qualified Data.List as L
@@ -66,7 +67,11 @@ serviceLoop conf = do
 
 main :: IO ()
 main = do
-    conf <- C.load [C.Required "application.conf"]
+    config <- CP.parseConfigOptions
+    case config of
+        Just c -> putStrLn (show c)
+        Nothing -> hPutStrLn stderr ("ERROR: Failed to parse config ") >> exitFailure
+    -- conf <- C.load [C.Required "application.conf"]
     -- daemonize $ serviceLoop conf
-    serviceLoop conf
+    -- serviceLoop conf
 
